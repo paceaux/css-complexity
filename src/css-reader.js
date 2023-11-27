@@ -85,6 +85,37 @@ export default class CSSReader {
 		return parsedCSS;
 	}
 
+	static getCSSSelectors(parsedCSS) {
+		let selectorList = [];
+
+		if (!parsedCSS || !parsedCSS.cssRules) {
+			throw new Error('parsedCSS not provided or CSSRules not present');
+		}
+
+		const { cssRules } = parsedCSS;
+
+		selectorList = [...cssRules]
+			.map((cssRule) => {
+				let selectorText = null;
+
+				if (cssRule.selectorText) {
+					selectorText = cssRule.selectorText;
+				}
+
+				if (cssRule.cssRules) {
+					const nestedSelectors = CSSReader.getCSSSelectors(cssRule);
+					if (nestedSelectors.length) {
+						selectorText = nestedSelectors;
+					}
+				}
+				return selectorText;
+			})
+			.flat(Infinity);
+		const selectors = [...new Set(selectorList)].filter((item) => item);
+
+		return selectors;
+	}
+
 	/**
    * @property {string[]} selectors - the selectors found in the CSS
    */
@@ -92,9 +123,7 @@ export default class CSSReader {
 		let selectors;
 
 		if (this.parsedCSS) {
-			const { cssRules } = this.parsedCSS;
-			const selectorList = cssRules.map((cssRule) => cssRule.selectorText);
-			selectors = [...new Set(selectorList)];
+			selectors = CSSReader.getCSSSelectors(this.parsedCSS);
 		}
 
 		return selectors;
