@@ -84,6 +84,10 @@ export default class CSSReader {
 
 		return parsedCSS;
 	}
+	/**
+	 * @param  {CSSStyleSheet} parsedCSS
+	 * @returns {CSSRule[]}
+	 */
 
 	static getCSSRules(parsedCSS) {
 		let ruleList = [];
@@ -116,6 +120,12 @@ export default class CSSReader {
 		return selectors;
 	}
 
+	/**
+	 * Get the CSS Selectors from the CSS
+	 * @param  {CSSStyleSheet} parsedCSS
+	 * @returns {string[]}
+	 */
+
 	static getCSSSelectors(parsedCSS) {
 		if (!parsedCSS || !parsedCSS.cssRules) {
 			throw new Error('parsedCSS not provided or CSSRules not present');
@@ -128,6 +138,11 @@ export default class CSSReader {
 		return uniqueSelectors;
 	}
 
+	/**
+	 * Get the at-rules from the CSS (only the ones that wrap selectors)
+	 * @param  {CSSStyleSheet} parsedCSS
+	 * @returns {CSSGroupingRule[]}
+	 */
 	static getAtRules(parsedCSS) {
 		let atRuleList = [];
 
@@ -159,6 +174,9 @@ export default class CSSReader {
 		return selectors;
 	}
 
+	/**
+	 * @property {CSSGroupingRule[]} atRules - the at-rules found in the CSS
+	 */
 	get atRules() {
 		let atRuleList = [];
 
