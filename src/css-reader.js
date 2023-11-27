@@ -85,8 +85,8 @@ export default class CSSReader {
 		return parsedCSS;
 	}
 
-	static getCSSSelectors(parsedCSS) {
-		let selectorList = [];
+	static getCSSRules(parsedCSS) {
+		let ruleList = [];
 
 		if (!parsedCSS || !parsedCSS.cssRules) {
 			throw new Error('parsedCSS not provided or CSSRules not present');
@@ -94,26 +94,38 @@ export default class CSSReader {
 
 		const { cssRules } = parsedCSS;
 
-		selectorList = [...cssRules]
+		ruleList = [...cssRules]
 			.map((cssRule) => {
-				let selectorText = null;
+				let rule = null;
 
 				if (cssRule.selectorText) {
-					selectorText = cssRule.selectorText;
+					rule = cssRule;
 				}
 
 				if (cssRule.cssRules) {
-					const nestedSelectors = CSSReader.getCSSSelectors(cssRule);
+					const nestedSelectors = CSSReader.getCSSRules(cssRule);
 					if (nestedSelectors.length) {
-						selectorText = nestedSelectors;
+						rule = nestedSelectors;
 					}
 				}
-				return selectorText;
+				return rule;
 			})
 			.flat(Infinity);
-		const selectors = [...new Set(selectorList)].filter((item) => item);
+		const selectors = [...new Set(ruleList)].filter((item) => item);
 
 		return selectors;
+	}
+
+	static getCSSSelectors(parsedCSS) {
+		if (!parsedCSS || !parsedCSS.cssRules) {
+			throw new Error('parsedCSS not provided or CSSRules not present');
+		}
+
+		const cssRules = CSSReader.getCSSRules(parsedCSS);
+		const selectors = cssRules.map((cssRule) => cssRule.selectorText);
+		const uniqueSelectors = [...new Set(selectors)];
+
+		return uniqueSelectors;
 	}
 
 	/**
@@ -127,5 +139,17 @@ export default class CSSReader {
 		}
 
 		return selectors;
+	}
+
+	get mediaQueries() {
+		let mediaQueries;
+
+		if (this.parsedCSS) {
+			const { cssRules } = this.parsedCSS;
+			const mediaQueryList = cssRules.filter((cssRule) => cssRule.type === 4);
+			mediaQueries = mediaQueryList.map((mediaQuery) => mediaQuery.cssText);
+		}
+
+		return mediaQueries;
 	}
 }
