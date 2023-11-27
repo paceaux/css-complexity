@@ -145,4 +145,13 @@ describe('CSS Reader', () => {
 			assert.equal(cssReader.selectors.length, 5);
 		});
 	});
+	describe('media queries', () => {
+		it('has parsed css with a single media query', async () => {
+			const cssReader = new CSSReader(testFileNameMediaQuery);
+			await cssReader.readFileAsync();
+			console.log(cssReader.atRules);
+			assert.ok(cssReader.parsedCSS);
+			assert.equal(cssReader.atRules.length, 1);
+		});
+	});
 });

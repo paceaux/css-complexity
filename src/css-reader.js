@@ -128,6 +128,24 @@ export default class CSSReader {
 		return uniqueSelectors;
 	}
 
+	static getAtRules(parsedCSS) {
+		let atRuleList = [];
+
+		if (parsedCSS) {
+			const rules = CSSReader.getCSSRules(parsedCSS);
+			const rulesWithParents = rules.filter((rule) => rule?.parentRule);
+			const atRules = rulesWithParents.map((rule) => {
+				if (rule?.parentRule?.name || rule?.parentRule?.conditionText) {
+					return rule.parentRule;
+				}
+			});
+
+			atRuleList = [...new Set(atRules)];
+		}
+
+		return atRuleList;
+	}
+
 	/**
    * @property {string[]} selectors - the selectors found in the CSS
    */
@@ -141,15 +159,13 @@ export default class CSSReader {
 		return selectors;
 	}
 
-	get mediaQueries() {
-		let mediaQueries;
+	get atRules() {
+		let atRuleList = [];
 
 		if (this.parsedCSS) {
-			const { cssRules } = this.parsedCSS;
-			const mediaQueryList = cssRules.filter((cssRule) => cssRule.type === 4);
-			mediaQueries = mediaQueryList.map((mediaQuery) => mediaQuery.cssText);
+			atRuleList = CSSReader.getAtRules(this.parsedCSS);
 		}
 
-		return mediaQueries;
+		return atRuleList;
 	}
 }
