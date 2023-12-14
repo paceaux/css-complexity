@@ -90,30 +90,39 @@ class AtRule {
 	}
 
 	/**
+	 * @description separates the @ from the word and returns the word
 	 * @param  {string} atRuleString
 	 * @returns {string|undefined} the type of at-rule (whatever it starts with, but with @ removed)
 	 */
 	static getAtRuleType(atRuleString) {
 		if (!atRuleString) return undefined;
-		const atRule = atRuleString.match(AtRule.ruleTypeRegex)[0];
+		const sanitized = AtRule.sanitizeAtRule(atRuleString);
+		const atRule = sanitized.match(AtRule.ruleTypeRegex)[0];
 		return atRule.replace('@', '');
 	}
 
 	/**
+	 * @description gets specifically the condition text from an at-rule
 	 * @param  {string} atRuleString
 	 * @returns {string|undefined} the condition of the at-rule
 	 */
 	static getConditionText(atRuleString) {
 		if (!atRuleString) return undefined;
-		const atRuleType = AtRule.getAtRuleType(atRuleString);
+		const sanitized = AtRule.sanitizeAtRule(atRuleString);
+		const atRuleType = AtRule.getAtRuleType(sanitized);
 		const condition = atRuleString.split(atRuleType)[1].trim();
 		return condition;
 	}
 
-	static sanitizeAtRule(condition) {
-		if (typeof condition !== 'string') throw new Error('condition must be a string');
+	/**
+	 * @description sanitizes an at-rule
+	 * @param  {string} rule
+	 * @returns {string} sanitized rule (lowercased, doublespaces removed, all extraneous spacing removed)
+	 */
+	static sanitizeAtRule(rule) {
+		if (typeof rule !== 'string') throw new Error('condition must be a string');
 
-		const sanitizedCondition = condition
+		const sanitizedRule = rule
 			.toLowerCase()
 			.replace(/\s{2,}/g, ' ') // remove double spaces or more
 			.replace('( ', '(')
@@ -121,11 +130,23 @@ class AtRule {
 			.replace(/\s?:\s?/g, ':') // remove spaces around :
 			.trim();
 
-		return sanitizedCondition;
+		return sanitizedRule;
 	}
 
+	/**
+	 * @typedef Token
+	 * @type {object}
+	 * @property {string} type - the type of token (at, feature, operator)
+	 * @property {string} value - the value of the token
+	 * @property {boolean} isConditional - whether or not the token is conditional
+	 */
+	/**
+	 * @description specifically creates a token from an at rule
+	 * @param  {string} atType
+	 * @returns {Token|null}
+	 */
 	static tokenizeAtType(atType) {
-		if (!atType) return undefined;
+		if (!atType) return null;
 		let token = null;
 		const sanitized = AtRule.sanitizeAtRule(atType);
 		const atString = AtRule.getAtRuleType(sanitized);
@@ -135,7 +156,6 @@ class AtRule {
 				type: 'at',
 				value: atString,
 				isConditional: false,
-				isMedia: false,
 			};
 			if (AtRule.conditionalAtTypeRegex.test(atString)) {
 				token.isConditional = true;
