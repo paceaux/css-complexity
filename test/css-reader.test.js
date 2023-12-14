@@ -166,7 +166,6 @@ describe('CSS Reader', () => {
 		it('has parsed css with two media queries', async () => {
 			const cssReader = new CSSReader(testFileNameMediaQuery2);
 			await cssReader.readFileAsync();
-			console.log(cssReader.atRules);
 			assert.ok(cssReader.parsedCSS);
 			assert.equal(cssReader.atRules.length, 2);
 		});
