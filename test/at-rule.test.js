@@ -93,15 +93,12 @@ describe('at-rule tests', () => {
 	describe('tokenizing the whole dang thing', () => {
 		it('tokenizes a basic media query and gets the right amount back', () => {
 			const tokens = AtRule.tokenizeAtRule('@media screen and (min-width: 900px)');
-			console.log(tokens);
-			console.log('TOKENS FROM THE MEDIA QUERY', tokens[0], tokens[1], tokens[2]);
 			assert.equal(tokens.length, 4);
 		});
 	});
 	describe('getting the weight', () => {
 		it('gets the weight of a basic media query', () => {
 			const atRule = new AtRule('@media screen and (min-width: 900px)');
-			console.log('AT RULE WEIGHT: ', atRule.atRuleWeight);
 			assert.equal(atRule.atRuleWeight, 3);
 		});
 	});

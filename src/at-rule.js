@@ -139,6 +139,7 @@ class AtRule {
 	 * @property {string} type - the type of token (at, feature, operator)
 	 * @property {string} value - the value of the token
 	 * @property {boolean} isConditional - whether or not the token is conditional
+	 * @property {boolean} isRange - whether or not the token is a range
 	 */
 	/**
 	 * @description specifically creates a token from an at rule
@@ -164,6 +165,10 @@ class AtRule {
 		return token;
 	}
 
+	/**
+	 * @param  {string} atRule
+	 * @returns {Token[]} an array of tokens
+	 */
 	static tokenizeAtRule(atRule) {
 		if (typeof atRule !== 'string') throw new Error('atRule must be a string');
 		const sanitized = AtRule.sanitizeAtRule(atRule);
@@ -198,14 +203,34 @@ class AtRule {
 		return tokens;
 	}
 
+	/**
+	 * @description returns the type of at-rule
+	 * @returns {string|undefined} the type of at-rule
+	 */
 	get atRuleType() {
 		return AtRule.getAtRuleType(this.atRule);
 	}
 
+	/**
+	 * @description returns the condition of the at-rule
+	 * @returns {string|undefined} the condition of the at-rule
+	 */
 	get conditionText() {
 		return AtRule.getConditionText(this.atRule);
 	}
 
+	/**
+	 * @description returns the tokens of the at-rule
+	 * @returns {Token[]} the tokens of the at-rule
+	 */
+	get tokens() {
+		return AtRule.tokenizeAtRule(this.atRule);
+	}
+
+	/**
+	 * @description returns the weight of the at-rule
+	 * @returns {number} the weight of the at-rule
+	 */
 	get atRuleWeight() {
 		const tokens = AtRule.tokenizeAtRule(this.atRule);
 		let weight = 0;
