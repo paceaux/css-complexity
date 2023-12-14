@@ -3,6 +3,7 @@ import cssom from 'cssom';
 
 import { LOG_FILE_NAME } from './constants.js';
 import Log from './logger.js';
+import Selector from './selector.js';
 
 const log = new Log(LOG_FILE_NAME);
 
@@ -44,6 +45,22 @@ export default class CSSReader {
 		return contents;
 	}
 
+	static getParsedCSS(rawCSS) {
+		let parsedCSS;
+
+		if (rawCSS) {
+			try {
+				parsedCSS = cssom.parse(rawCSS);
+			} catch (parseError) {
+				// the CSSOM package hasn't been updated in 2 years; it doesn't know about @layers.
+				log.errorToFileAsync('Error parsing CSS; there is something wrong with the CSS passed in');
+				log.errorToFileAsync(parseError);
+			}
+		}
+
+		return parsedCSS;
+	}
+
 	/**
    * @method
    * @description reads the file specified in the constructor and sets the result to the rawContents property
@@ -79,13 +96,7 @@ export default class CSSReader {
 		let parsedCSS;
 
 		if (this.rawCSS) {
-			try {
-				parsedCSS = cssom.parse(this.rawCSS);
-			} catch (parseError) {
-				// the CSSOM package hasn't been updated in 2 years; it doesn't know about @layers.
-				log.errorToFileAsync('Error parsing CSS; there is something wrong with the CSS passed in');
-				log.errorToFileAsync(parseError);
-			}
+			parsedCSS = CSSReader.getParsedCSS(this.rawCSS);
 		}
 
 		return parsedCSS;
@@ -124,6 +135,19 @@ export default class CSSReader {
 		const selectors = [...new Set(ruleList)].filter((item) => item);
 
 		return selectors;
+	}
+
+	static getWeightedCSSRules(parsedCSS) {
+		const cssRules = CSSReader.getCSSRules(parsedCSS);
+
+		const weightedRules = cssRules.map((cssRule) => {
+			const cssSelector = new Selector(cssRule.selectorText);
+			const weightedRule = { ...cssRule };
+			weightedRule.selectorWeight = cssSelector;
+			return weightedRule;
+		});
+
+		return weightedRules;
 	}
 
 	/**
