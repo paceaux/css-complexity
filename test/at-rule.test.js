@@ -90,4 +90,12 @@ describe('at-rule tests', () => {
 			assert.equal(token.isConditional, true);
 		});
 	});
+	describe('tokenizing the whole dang thing', () => {
+		it('tokenizes a basic media query and gets the right amount back', () => {
+			const tokens = AtRule.tokenizeAtRule('@media screen and (min-width: 900px)');
+			console.log(tokens);
+			console.log(tokens[0], tokens[1], tokens[2]);
+			assert.equal(tokens.length, 4);
+		});
+	});
 });

@@ -164,6 +164,40 @@ class AtRule {
 		return token;
 	}
 
+	static tokenizeAtRule(atRule) {
+		if (typeof atRule !== 'string') throw new Error('atRule must be a string');
+		const sanitized = AtRule.sanitizeAtRule(atRule);
+		const split = sanitized.split(' ');
+
+		const tokens = split.map((token) => {
+			if (AtRule.atTypeRegex.test(token)) {
+				return AtRule.tokenizeAtType(token);
+			}
+			if (AtRule.mediaTypeRegex.test(token)) {
+				return {
+					type: 'feature',
+					value: token,
+				};
+			}
+			if (AtRule.operatorRegex.test(token)) {
+				return {
+					type: 'operator',
+					value: token,
+				};
+			}
+			if (token.includes('(') && token.includes(')')) {
+				return {
+					type: 'feature',
+					value: token,
+					isRange: true,
+				};
+			}
+			return null;
+		}).filter((token) => token !== null);
+
+		return tokens;
+	}
+
 	get atRuleType() {
 		return AtRule.getAtRuleType(this.atRule);
 	}
