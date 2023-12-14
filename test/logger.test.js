@@ -22,6 +22,7 @@ describe('Logger', () => {
 		it('it makes a pretty block', () => {
 			const styledInfo = Logger.styleInfo('A Test');
 
+			// eslint-disable-next-line prefer-regex-literals
 			assert.match(styledInfo, new RegExp(`
 =============================
 A Test

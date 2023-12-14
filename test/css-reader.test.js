@@ -44,7 +44,6 @@ ${sampleCSSMediaQuery1}
 const testFileNameBasic = 'test.css';
 const testFileNameMediaQuery1 = 'test-mq1.css';
 const testFileNameMediaQuery2 = 'test-mq2.css';
-const testFilenameLayer1 = 'test-layer1.css';
 
 describe('CSS Reader', () => {
 	before(async () => {

@@ -156,12 +156,16 @@ export default class CSSReader {
 			const rules = CSSReader.getCSSRules(parsedCSS);
 			const rulesWithParents = rules.filter((rule) => rule?.parentRule);
 			const atRules = rulesWithParents.map((rule) => {
+				let atRule;
 				if (rule?.parentRule?.name || rule?.parentRule?.conditionText) {
-					return rule.parentRule;
+					atRule = rule.parentRule;
 				}
+				return atRule;
 			});
 
-			atRuleList = [...new Set(atRules)];
+			const filteredAtRules = atRules.filter((rule) => rule);
+
+			atRuleList = [...new Set(filteredAtRules)];
 		}
 
 		return atRuleList;
