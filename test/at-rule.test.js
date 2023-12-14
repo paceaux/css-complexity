@@ -5,6 +5,10 @@ import AtRule from '../src/at-rule.js';
 
 describe('at-rule tests', () => {
 	describe('it sanitizes at rules from a static method', () => {
+		it('lowercases', () => {
+			const condition = AtRule.sanitizeAtRule('SCREEN and (Min-width: 900px)');
+			assert.equal(condition, 'screen and (min-width:900px)');
+		});
 		it('removes space after a :', () => {
 			const condition = AtRule.sanitizeAtRule('screen and (min-width: 900px)');
 			assert.equal(condition, 'screen and (min-width:900px)');

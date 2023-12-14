@@ -38,6 +38,7 @@ class AtRule {
 		if (typeof condition !== 'string') throw new Error('condition must be a string');
 
 		const sanitizedCondition = condition
+			.toLowerCase()
 			.replace(/\s{2,}/g, ' ') // remove double spaces or more
 			.replace('( ', '(')
 			.replace(' )', ')')
