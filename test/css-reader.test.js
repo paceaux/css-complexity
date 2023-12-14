@@ -27,24 +27,35 @@ h2, h3 {
     display: none;
 }`;
 
-const sampleCSSMediaQuery = `
-  @media screen and (min-width: 480px) {
-		${sampleCSSBasic}
-	}
+const sampleCSSMediaQuery1 = `
+@media screen and (min-width: 480px) {
+	${sampleCSSBasic}
+}
+`;
+const sampleCSSMediaQuery2 = `
+${sampleCSSMediaQuery1}
+@media (min-height: 680px), screen and (orientation: portrait) {
+	${sampleCSSBasic}
+}
 `;
 
 const testFileNameBasic = 'test.css';
-const testFileNameMediaQuery = 'test-mq.css';
+const testFileNameMediaQuery1 = 'test-mq1.css';
+const testFileNameMediaQuery2 = 'test-mq2.css';
+const testFilenameLayer1 = 'test-layer1.css';
+
 describe('CSS Reader', () => {
 	before(async () => {
 		// create a test CSS file
 		await outputter.writeFileAsync(sampleCSSBasic, testFileNameBasic);
-		await outputter.writeFileAsync(sampleCSSMediaQuery, testFileNameMediaQuery);
+		await outputter.writeFileAsync(sampleCSSMediaQuery1, testFileNameMediaQuery1);
+		await outputter.writeFileAsync(sampleCSSMediaQuery2, testFileNameMediaQuery2);
 	});
 	after(async () => {
 		// remove test css file
 		await promises.unlink(testFileNameBasic);
-		await promises.unlink(testFileNameMediaQuery);
+		await promises.unlink(testFileNameMediaQuery1);
+		await promises.unlink(testFileNameMediaQuery2);
 		// await promises.unlink(logger.logFile);
 	});
 	describe('instantiation', () => {
@@ -145,13 +156,19 @@ describe('CSS Reader', () => {
 			assert.equal(cssReader.selectors.length, 5);
 		});
 	});
-	describe('media queries', () => {
+	describe('at rules', () => {
 		it('has parsed css with a single media query', async () => {
-			const cssReader = new CSSReader(testFileNameMediaQuery);
+			const cssReader = new CSSReader(testFileNameMediaQuery1);
+			await cssReader.readFileAsync();
+			assert.ok(cssReader.parsedCSS);
+			assert.equal(cssReader.atRules.length, 1);
+		});
+		it('has parsed css with two media queries', async () => {
+			const cssReader = new CSSReader(testFileNameMediaQuery2);
 			await cssReader.readFileAsync();
 			console.log(cssReader.atRules);
 			assert.ok(cssReader.parsedCSS);
-			assert.equal(cssReader.atRules.length, 1);
+			assert.equal(cssReader.atRules.length, 2);
 		});
 	});
 });
