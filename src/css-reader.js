@@ -79,7 +79,13 @@ export default class CSSReader {
 		let parsedCSS;
 
 		if (this.rawCSS) {
-			parsedCSS = cssom.parse(this.rawCSS);
+			try {
+				parsedCSS = cssom.parse(this.rawCSS);
+			} catch (parseError) {
+				// the CSSOM package hasn't been updated in 2 years; it doesn't know about @layers.
+				log.errorToFileAsync('Error parsing CSS; there is something wrong with the CSS passed in');
+				log.errorToFileAsync(parseError);
+			}
 		}
 
 		return parsedCSS;
