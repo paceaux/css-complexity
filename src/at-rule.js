@@ -1,6 +1,82 @@
 class AtRule {
 	static ruleTypeRegex = /@\w+/;
 
+	static atTypes = [
+		'charset',
+		'counter-style',
+		'document',
+		'font-face',
+		'font-feature-values',
+		'import',
+		'keyframes',
+		'layer', // DANGER, CSSOM DOESN'T SUPPORT THIS
+		'media',
+		'name-space',
+		'page',
+		'property',
+		'scope',
+		'starting-style',
+		'supports',
+	];
+
+	static conditionalAtTypes = [
+		'media',
+		'scope',
+		'starting-style',
+		'supports',
+		'document',
+	];
+
+	static mediaTypes = [
+		'all',
+		'aural',
+		'braille',
+		'embossed',
+		'handheld',
+		'print',
+		'projection',
+		'screen',
+		'tty',
+		'tv',
+		'presentation',
+	];
+
+	static operators = [
+		'and',
+		'not',
+		'only',
+		'or',
+		',',
+	];
+
+	/**
+	* @typedef RegExQuery
+	* @type {RegExp}
+	* @description A regular expression for matching media query types
+	*/
+	static atTypeRegex = new RegExp(`(${AtRule.atTypes.join('|')})`, 'i');
+
+	/**
+	* @typedef RegExQuery
+	* @type {RegExp}
+	* @description A regular expression for matching specifically conditional at rules
+	*/
+	static conditionalAtTypeRegex = new RegExp(`(${AtRule.conditionalAtTypes.join('|')})`, 'i');
+
+	/**
+	* @typedef RegExQuery
+	* @type {RegExp}
+	* @description A regular expression for matching media query types
+	*/
+	static mediaTypeRegex = new RegExp(`(${AtRule.mediaTypes.join('|')})`, 'i');
+
+	/**
+	* @typedef RegExQuery
+	* @type {RegExp}
+	* @description A regular expression for matching at-rule types
+	*/
+	static operatorRegex = new RegExp(`(${AtRule.operators.join('|')})`, 'i');
+
 	/**
 	 * @param  {string} atRule=''
 	 * @param  {object} dependencies={}
@@ -9,7 +85,7 @@ class AtRule {
 		this.dependencies = dependencies;
 
 		if (atRule) {
-			this.atRule = atRule.trim();
+			this.atRule = AtRule.sanitizeAtRule(atRule);
 		}
 	}
 

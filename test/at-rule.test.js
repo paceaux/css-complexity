@@ -49,7 +49,25 @@ describe('at-rule tests', () => {
 		});
 		it('can return the condition from getter', () => {
 			const atRule = new AtRule('@media screen and (min-width: 900px)');
-			assert.equal(atRule.conditionText, 'screen and (min-width: 900px)');
+			assert.equal(atRule.conditionText, 'screen and (min-width:900px)');
 		});
-	})
+	});
+	describe('regexing', () => {
+		it('will match something with attype', () => {
+			const match = 'media'.match(AtRule.atTypeRegex);
+			assert.equal(match[0], 'media');
+		});
+		it('will match something with mediatype', () => {
+			const match = 'screen'.match(AtRule.mediaTypeRegex);
+			assert.equal(match[0], 'screen');
+		});
+		it('will match something with operatorType', () => {
+			const match = 'or'.match(AtRule.operatorRegex);
+			assert.equal(match[0], 'or');
+		});
+		it('will will not match  something with atType', () => {
+			const match = 'foo'.match(AtRule.atTypeRegex);
+			assert.notEqual(match, 'foo');
+		});
+	});
 });
