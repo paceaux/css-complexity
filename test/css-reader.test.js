@@ -1,4 +1,6 @@
-import { describe, it, after, before } from 'node:test';
+import {
+	describe, it, after, before,
+} from 'node:test';
 import assert from 'node:assert';
 import { promises } from 'fs';
 
