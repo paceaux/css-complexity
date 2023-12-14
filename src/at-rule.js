@@ -205,6 +205,25 @@ class AtRule {
 	get conditionText() {
 		return AtRule.getConditionText(this.atRule);
 	}
+
+	get atRuleWeight() {
+		const tokens = AtRule.tokenizeAtRule(this.atRule);
+		let weight = 0;
+
+		tokens.forEach((token) => {
+			if (token.type === 'at') {
+				weight += 1;
+			}
+
+			if (token.type === 'feature' && !token.isRange) {
+				weight += 1;
+			}
+			if (token.type === 'operator') {
+				weight += 1;
+			}
+		});
+		return weight;
+	}
 }
 
 export default AtRule;
