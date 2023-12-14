@@ -70,4 +70,24 @@ describe('at-rule tests', () => {
 			assert.notEqual(match, 'foo');
 		});
 	});
+	describe('tokeninzing the at', () => {
+		it('will convert @page into a token that isnt conditional', () => {
+			const token = AtRule.tokenizeAtType('@page');
+			assert.equal(token.type, 'at');
+			assert.equal(token.value, 'page');
+			assert.equal(token.isConditional, false);
+		});
+		it('will convert @media  into a token that is conditional', () => {
+			const token = AtRule.tokenizeAtType('@media');
+			assert.equal(token.type, 'at');
+			assert.equal(token.value, 'media');
+			assert.equal(token.isConditional, true);
+		});
+		it('will convert @supports  into a token that is conditional', () => {
+			const token = AtRule.tokenizeAtType('@supports');
+			assert.equal(token.type, 'at');
+			assert.equal(token.value, 'supports');
+			assert.equal(token.isConditional, true);
+		});
+	});
 });

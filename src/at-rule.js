@@ -124,6 +124,26 @@ class AtRule {
 		return sanitizedCondition;
 	}
 
+	static tokenizeAtType(atType) {
+		if (!atType) return undefined;
+		let token = null;
+		const sanitized = AtRule.sanitizeAtRule(atType);
+		const atString = AtRule.getAtRuleType(sanitized);
+		const isMatch = AtRule.atTypeRegex.test(atString);
+		if (isMatch) {
+			token = {
+				type: 'at',
+				value: atString,
+				isConditional: false,
+				isMedia: false,
+			};
+			if (AtRule.conditionalAtTypeRegex.test(atString)) {
+				token.isConditional = true;
+			}
+		}
+		return token;
+	}
+
 	get atRuleType() {
 		return AtRule.getAtRuleType(this.atRule);
 	}
