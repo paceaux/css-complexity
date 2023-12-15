@@ -137,13 +137,23 @@ export default class CSSReader {
 		return selectors;
 	}
 
-	static getWeightedCSSRules(parsedCSS) {
-		const cssRules = CSSReader.getCSSRules(parsedCSS);
+	/**
+	 * @typedef {CSSRule} WeightedCSSRule
+	 * @property {Selector} selectorWeight
+	 */
 
+	/**
+	 * @param  {CSSRule[]} cssRules
+	 * @returns {CSSRule[]}
+	 */
+	static getWeightedCSSRules(cssRules) {
 		const weightedRules = cssRules.map((cssRule) => {
 			const cssSelector = new Selector(cssRule.selectorText);
-			const weightedRule = { ...cssRule };
-			weightedRule.selectorWeight = cssSelector;
+			const {specificity, selectorComplexity, selector } = cssSelector;
+			console.log('selector', selector);
+			console.log('specificity', specificity);
+			console.log('selectorComplexity', selectorComplexity);
+			const weightedRule = { ...cssRule, specificity, selectorComplexity };
 			return weightedRule;
 		});
 
