@@ -10,6 +10,11 @@ THIS WILL PROBABLY ALSO POOP ITSELF QUITE GROTESQUELY IF IT'S GIVEN THAT
 FIGURE OUT WHAT TO DO
 */
 
+
+/**
+ * @class
+ * @classdesc Represents an at rule. Probably the kind that has conditions
+ */
 class AtRule {
 	static ruleTypeRegex = /@\w+/;
 
