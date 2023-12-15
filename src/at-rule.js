@@ -1,3 +1,15 @@
+/*
+HEY: TODO
+A MEDIA QUERY CAN HAVE A COMMA:
+
+@media screen (min-width: 1px),
+print (min-width: 1px) {}
+
+THIS WILL PROBABLY ALSO POOP ITSELF QUITE GROTESQUELY IF IT'S GIVEN THAT
+
+FIGURE OUT WHAT TO DO
+*/
+
 class AtRule {
 	static ruleTypeRegex = /@\w+/;
 
