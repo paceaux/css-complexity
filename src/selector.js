@@ -1,5 +1,14 @@
 import * as specificity from 'specificity';
 
+/*
+HEY: TODO
+A SELECTOR CAN HAVE A COMMA:
+.someThing, anotherThing {}
+
+THIS WILL SHIT ITS PANTS IF IT'S GIVEN THAT
+
+FIGURE OUT WHAT TO DO
+*/
 /**
  * @class
  * @classdesc Represents a CSS selector.
