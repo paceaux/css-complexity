@@ -47,9 +47,16 @@ ${sampleCSSMediaQuery1}
 }
 `;
 
+const sampleCSSSupports = `
+@supports (display: grid) and (gap: 1rem) {
+	${sampleCSSBasic}
+}
+`;
+
 const testFileNameBasic = 'weight-test.css';
 const testFileNameMediaQuery1 = 'weight-test-mq1.css';
 const testFileNameMediaQuery2 = 'weight-test-mq2.css';
+const testFileNameSupports = 'weight-test-supports.css';
 
 describe('CSS Reader', () => {
 	before(async () => {
@@ -57,12 +64,14 @@ describe('CSS Reader', () => {
 		await outputter.writeFileAsync(sampleCSSBasic, testFileNameBasic);
 		await outputter.writeFileAsync(sampleCSSMediaQuery1, testFileNameMediaQuery1);
 		await outputter.writeFileAsync(sampleCSSMediaQuery2, testFileNameMediaQuery2);
+		await outputter.writeFileAsync(sampleCSSSupports, testFileNameSupports);
 	});
 	after(async () => {
 		// remove test css file
 		await promises.unlink(testFileNameBasic);
 		await promises.unlink(testFileNameMediaQuery1);
 		await promises.unlink(testFileNameMediaQuery2);
+		await promises.unlink(testFileNameSupports);
 		// await promises.unlink(logger.logFile);
 	});
 	describe('cssRuleWeights', () => {
@@ -160,6 +169,34 @@ describe('CSS Reader', () => {
 					`totalComplexity should equal selectorComplexity + atRuleWeight for selector: ${rule.selectorText}`,
 				);
 			});
+		});
+
+		it('rules inside @supports have correct atRuleWeight', () => {
+			const parsedCSS = CSSReader.getParsedCSS(sampleCSSSupports);
+			const cssRules = CSSReader.getCSSRules(parsedCSS);
+			const weightedRules = CSSReader.getWeightedCSSRules(cssRules);
+
+			// @supports (display: grid) and (gap: 1rem)
+			// Weight: 1 (@supports) + 1 (and) = 2
+			// Note: features (display: grid) and (gap: 1rem) are range features
+			// and don't add to weight
+			weightedRules.forEach((rule) => {
+				assert.equal(rule.atRuleWeight, 2);
+			});
+		});
+
+		it('rules inside @supports have correct totalComplexity', () => {
+			const parsedCSS = CSSReader.getParsedCSS(sampleCSSSupports);
+			const cssRules = CSSReader.getCSSRules(parsedCSS);
+			const weightedRules = CSSReader.getWeightedCSSRules(cssRules);
+			const [first, , , fourth, fifth, sixth] = weightedRules;
+
+			// Each rule's totalComplexity = selectorComplexity + atRuleWeight
+			// atRuleWeight is 2 for all rules in this @supports
+			assert.equal(first.totalComplexity, 1 + 2); // body: 1 + 2 = 3
+			assert.equal(fourth.totalComplexity, 6 + 2); // html body#page > article.main: 6 + 2 = 8
+			assert.equal(fifth.totalComplexity, 4 + 2); // form fieldset input[type="text"]: 4 + 2 = 6
+			assert.equal(sixth.totalComplexity, 4 + 2); // header h1 a:hover: 4 + 2 = 6
 		});
 	});
 });
