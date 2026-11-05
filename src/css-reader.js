@@ -4,6 +4,7 @@ import cssom from 'cssom';
 import { LOG_FILE_NAME } from './constants.js';
 import Log from './logger.js';
 import Selector from './selector.js';
+import AtRule from './at-rule.js';
 
 const log = new Log(LOG_FILE_NAME);
 
@@ -143,17 +144,74 @@ export default class CSSReader {
 	 */
 
 	/**
+	 * @description Recursively walks up the parentRule chain and collects all parent rules
+	 * @param  {CSSRule} cssRule
+	 * @returns {CSSGroupingRule[]} array of parent rules from immediate parent to top-level
+	 */
+	static getParentRules(cssRule) {
+		const parentRules = [];
+		let currentRule = cssRule;
+
+		while (currentRule?.parentRule) {
+			parentRules.push(currentRule.parentRule);
+			currentRule = currentRule.parentRule;
+		}
+
+		return parentRules;
+	}
+
+	/**
+	 * @description Constructs an at-rule string from a CSSGroupingRule
+	 * @param  {CSSGroupingRule} groupingRule
+	 * @returns {string|null} the at-rule string (e.g., "@media screen and (min-width: 480px)")
+	 */
+	static getAtRuleString(groupingRule) {
+		if (!groupingRule) return null;
+
+		const atType = groupingRule.name || 'media';
+		const condition = groupingRule.conditionText || '';
+
+		return `@${atType} ${condition}`.trim();
+	}
+
+	/**
+	 * @description Calculates the total at-rule weight for a CSS rule by walking up parent rules
+	 * @param  {CSSRule} cssRule
+	 * @returns {number} the sum of all parent at-rule weights
+	 */
+	static getAtRuleWeight(cssRule) {
+		const parentRules = CSSReader.getParentRules(cssRule);
+		let totalWeight = 0;
+
+		parentRules.forEach((parentRule) => {
+			const atRuleString = CSSReader.getAtRuleString(parentRule);
+			if (atRuleString) {
+				const atRule = new AtRule(atRuleString);
+				totalWeight += atRule.atRuleWeight;
+			}
+		});
+
+		return totalWeight;
+	}
+
+	/**
 	 * @param  {CSSRule[]} cssRules
-	 * @returns {CSSRule[]}
+	 * @returns {WeightedCSSRule[]} CSS rules with specificity, selectorComplexity, atRuleWeight, and totalComplexity
 	 */
 	static getWeightedCSSRules(cssRules) {
 		const weightedRules = cssRules.map((cssRule) => {
 			const cssSelector = new Selector(cssRule.selectorText);
-			const {specificity, selectorComplexity, selector } = cssSelector;
-			console.log('selector', selector);
-			console.log('specificity', specificity);
-			console.log('selectorComplexity', selectorComplexity);
-			const weightedRule = { ...cssRule, specificity, selectorComplexity };
+			const { specificity, selectorComplexity } = cssSelector;
+			const atRuleWeight = CSSReader.getAtRuleWeight(cssRule);
+			const totalComplexity = selectorComplexity + atRuleWeight;
+
+			const weightedRule = {
+				...cssRule,
+				specificity,
+				selectorComplexity,
+				atRuleWeight,
+				totalComplexity,
+			};
 			return weightedRule;
 		});
 

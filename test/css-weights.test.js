@@ -77,5 +77,89 @@ describe('CSS Reader', () => {
 			assert.equal(fifth.selectorComplexity, 4);
 			assert.equal(sixth.selectorComplexity, 4);
 		});
+
+		it('rules without media queries have atRuleWeight of 0', () => {
+			const parsedCSS = CSSReader.getParsedCSS(sampleCSSBasic);
+			const cssRules = CSSReader.getCSSRules(parsedCSS);
+			const weightedRules = CSSReader.getWeightedCSSRules(cssRules);
+
+			weightedRules.forEach((rule) => {
+				assert.equal(rule.atRuleWeight, 0);
+			});
+		});
+
+		it('rules without media queries have totalComplexity equal to selectorComplexity', () => {
+			const parsedCSS = CSSReader.getParsedCSS(sampleCSSBasic);
+			const cssRules = CSSReader.getCSSRules(parsedCSS);
+			const weightedRules = CSSReader.getWeightedCSSRules(cssRules);
+
+			weightedRules.forEach((rule) => {
+				assert.equal(rule.totalComplexity, rule.selectorComplexity);
+			});
+		});
+
+		it('rules inside a single media query have correct atRuleWeight', () => {
+			const parsedCSS = CSSReader.getParsedCSS(sampleCSSMediaQuery1);
+			const cssRules = CSSReader.getCSSRules(parsedCSS);
+			const weightedRules = CSSReader.getWeightedCSSRules(cssRules);
+
+			// @media screen and (min-width: 480px) has weight of 3
+			// 1 for @media, 1 for screen, 1 for (min-width: 480px)
+			weightedRules.forEach((rule) => {
+				assert.equal(rule.atRuleWeight, 3);
+			});
+		});
+
+		it('rules inside a single media query have correct totalComplexity', () => {
+			const parsedCSS = CSSReader.getParsedCSS(sampleCSSMediaQuery1);
+			const cssRules = CSSReader.getCSSRules(parsedCSS);
+			const weightedRules = CSSReader.getWeightedCSSRules(cssRules);
+			const [first, , , fourth, fifth, sixth] = weightedRules;
+
+			// Each rule's totalComplexity = selectorComplexity + atRuleWeight
+			// atRuleWeight is 3 for all rules in this media query
+			assert.equal(first.totalComplexity, 1 + 3); // body: 1 + 3 = 4
+			assert.equal(fourth.totalComplexity, 6 + 3); // html body#page > article.main: 6 + 3 = 9
+			assert.equal(fifth.totalComplexity, 4 + 3); // form fieldset input[type="text"]: 4 + 3 = 7
+			assert.equal(sixth.totalComplexity, 4 + 3); // header h1 a:hover: 4 + 3 = 7
+		});
+
+		it('rules inside multiple media queries have correct atRuleWeight', () => {
+			const parsedCSS = CSSReader.getParsedCSS(sampleCSSMediaQuery2);
+			const cssRules = CSSReader.getCSSRules(parsedCSS);
+			const weightedRules = CSSReader.getWeightedCSSRules(cssRules);
+
+			// First 6 rules are from first media query: @media screen and (min-width: 480px)
+			// Weight: 1 (@media) + 1 (screen) + 1 (and) = 3
+			// Note: (min-width: 480px) is a range feature and doesn't add to weight
+			const firstSixRules = weightedRules.slice(0, 6);
+			firstSixRules.forEach((rule) => {
+				assert.equal(rule.atRuleWeight, 3);
+			});
+
+			// Next 6 rules are from second media query:
+			// @media screen and (min-height: 680px) and (orientation: portrait)
+			// Weight: 1 (@media) + 1 (screen) + 1 (and) + 1 (and)
+			//        + 1 (orientation:portrait tokenized as operator) = 5
+			// Note: (min-height: 680px) is a range feature and doesn't add to weight
+			const nextSixRules = weightedRules.slice(6, 12);
+			nextSixRules.forEach((rule) => {
+				assert.equal(rule.atRuleWeight, 5);
+			});
+		});
+
+		it('totalComplexity combines selector and at-rule weights correctly', () => {
+			const parsedCSS = CSSReader.getParsedCSS(sampleCSSMediaQuery2);
+			const cssRules = CSSReader.getCSSRules(parsedCSS);
+			const weightedRules = CSSReader.getWeightedCSSRules(cssRules);
+
+			weightedRules.forEach((rule) => {
+				assert.equal(
+					rule.totalComplexity,
+					rule.selectorComplexity + rule.atRuleWeight,
+					`totalComplexity should equal selectorComplexity + atRuleWeight for selector: ${rule.selectorText}`,
+				);
+			});
+		});
 	});
 });
