@@ -168,7 +168,23 @@ export default class CSSReader {
 	static getAtRuleString(groupingRule) {
 		if (!groupingRule) return null;
 
-		const atType = groupingRule.name || 'media';
+		let atType = groupingRule.name || '';
+
+		// If no name property, extract from constructor name
+		// CSSMediaRule -> media, CSSSupportsRule -> supports, etc.
+		if (!atType && groupingRule.constructor?.name) {
+			const constructorName = groupingRule.constructor.name;
+			atType = constructorName
+				.replace('CSS', '')
+				.replace('Rule', '')
+				.toLowerCase();
+		}
+
+		// Fallback to media if we still don't have a type
+		if (!atType) {
+			atType = 'media';
+		}
+
 		const condition = groupingRule.conditionText || '';
 
 		return `@${atType} ${condition}`.trim();
