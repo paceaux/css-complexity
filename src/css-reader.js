@@ -3,6 +3,8 @@ import cssom from 'cssom';
 
 import { LOG_FILE_NAME } from './constants.js';
 import Log from './logger.js';
+import Selector from './selector.js';
+import AtRule from './at-rule.js';
 
 const log = new Log(LOG_FILE_NAME);
 
@@ -44,6 +46,22 @@ export default class CSSReader {
 		return contents;
 	}
 
+	static getParsedCSS(rawCSS) {
+		let parsedCSS;
+
+		if (rawCSS) {
+			try {
+				parsedCSS = cssom.parse(rawCSS);
+			} catch (parseError) {
+				// the CSSOM package hasn't been updated in 2 years; it doesn't know about @layers.
+				log.errorToFileAsync('Error parsing CSS; there is something wrong with the CSS passed in');
+				log.errorToFileAsync(parseError);
+			}
+		}
+
+		return parsedCSS;
+	}
+
 	/**
    * @method
    * @description reads the file specified in the constructor and sets the result to the rawContents property
@@ -79,10 +97,170 @@ export default class CSSReader {
 		let parsedCSS;
 
 		if (this.rawCSS) {
-			parsedCSS = cssom.parse(this.rawCSS);
+			parsedCSS = CSSReader.getParsedCSS(this.rawCSS);
 		}
 
 		return parsedCSS;
+	}
+	/**
+	 * @param  {CSSStyleSheet} parsedCSS
+	 * @returns {CSSRule[]}
+	 */
+
+	static getCSSRules(parsedCSS) {
+		let ruleList = [];
+
+		if (!parsedCSS || !parsedCSS.cssRules) {
+			throw new Error('parsedCSS not provided or CSSRules not present');
+		}
+
+		const { cssRules } = parsedCSS;
+
+		ruleList = [...cssRules]
+			.map((cssRule) => {
+				let rule = null;
+
+				if (cssRule.selectorText) {
+					rule = cssRule;
+				}
+
+				if (cssRule.cssRules) {
+					const nestedSelectors = CSSReader.getCSSRules(cssRule);
+					if (nestedSelectors.length) {
+						rule = nestedSelectors;
+					}
+				}
+				return rule;
+			})
+			.flat(Infinity);
+		const selectors = [...new Set(ruleList)].filter((item) => item);
+
+		return selectors;
+	}
+
+	/**
+	 * @typedef {CSSRule} WeightedCSSRule
+	 * @property {Selector} selectorWeight
+	 */
+
+	/**
+	 * @description Recursively walks up the parentRule chain and collects all parent rules
+	 * @param  {CSSRule} cssRule
+	 * @returns {CSSGroupingRule[]} array of parent rules from immediate parent to top-level
+	 */
+	static getParentRules(cssRule) {
+		const parentRules = [];
+		let currentRule = cssRule;
+
+		while (currentRule?.parentRule) {
+			parentRules.push(currentRule.parentRule);
+			currentRule = currentRule.parentRule;
+		}
+
+		return parentRules;
+	}
+
+	/**
+	 * @description Constructs an at-rule string from a CSSGroupingRule
+	 * @param  {CSSGroupingRule} groupingRule
+	 * @returns {string|null} the at-rule string (e.g., "@media screen and (min-width: 480px)")
+	 */
+	static getAtRuleString(groupingRule) {
+		if (!groupingRule) return null;
+
+		const atType = groupingRule.name || 'media';
+		const condition = groupingRule.conditionText || '';
+
+		return `@${atType} ${condition}`.trim();
+	}
+
+	/**
+	 * @description Calculates the total at-rule weight for a CSS rule by walking up parent rules
+	 * @param  {CSSRule} cssRule
+	 * @returns {number} the sum of all parent at-rule weights
+	 */
+	static getAtRuleWeight(cssRule) {
+		const parentRules = CSSReader.getParentRules(cssRule);
+		let totalWeight = 0;
+
+		parentRules.forEach((parentRule) => {
+			const atRuleString = CSSReader.getAtRuleString(parentRule);
+			if (atRuleString) {
+				const atRule = new AtRule(atRuleString);
+				totalWeight += atRule.atRuleWeight;
+			}
+		});
+
+		return totalWeight;
+	}
+
+	/**
+	 * @param  {CSSRule[]} cssRules
+	 * @returns {WeightedCSSRule[]} CSS rules with specificity, selectorComplexity, atRuleWeight, and totalComplexity
+	 */
+	static getWeightedCSSRules(cssRules) {
+		const weightedRules = cssRules.map((cssRule) => {
+			const cssSelector = new Selector(cssRule.selectorText);
+			const { specificity, selectorComplexity } = cssSelector;
+			const atRuleWeight = CSSReader.getAtRuleWeight(cssRule);
+			const totalComplexity = selectorComplexity + atRuleWeight;
+
+			const weightedRule = {
+				...cssRule,
+				specificity,
+				selectorComplexity,
+				atRuleWeight,
+				totalComplexity,
+			};
+			return weightedRule;
+		});
+
+		return weightedRules;
+	}
+
+	/**
+	 * Get the CSS Selectors from the CSS
+	 * @param  {CSSStyleSheet} parsedCSS
+	 * @returns {string[]}
+	 */
+
+	static getCSSSelectors(parsedCSS) {
+		if (!parsedCSS || !parsedCSS.cssRules) {
+			throw new Error('parsedCSS not provided or CSSRules not present');
+		}
+
+		const cssRules = CSSReader.getCSSRules(parsedCSS);
+		const selectors = cssRules.map((cssRule) => cssRule.selectorText);
+		const uniqueSelectors = [...new Set(selectors)];
+
+		return uniqueSelectors;
+	}
+
+	/**
+	 * Get the at-rules from the CSS (only the ones that wrap selectors)
+	 * @param  {CSSStyleSheet} parsedCSS
+	 * @returns {CSSGroupingRule[]}
+	 */
+	static getAtRules(parsedCSS) {
+		let atRuleList = [];
+
+		if (parsedCSS) {
+			const rules = CSSReader.getCSSRules(parsedCSS);
+			const rulesWithParents = rules.filter((rule) => rule?.parentRule);
+			const atRules = rulesWithParents.map((rule) => {
+				let atRule;
+				if (rule?.parentRule?.name || rule?.parentRule?.conditionText) {
+					atRule = rule.parentRule;
+				}
+				return atRule;
+			});
+
+			const filteredAtRules = atRules.filter((rule) => rule);
+
+			atRuleList = [...new Set(filteredAtRules)];
+		}
+
+		return atRuleList;
 	}
 
 	/**
@@ -92,11 +270,22 @@ export default class CSSReader {
 		let selectors;
 
 		if (this.parsedCSS) {
-			const { cssRules } = this.parsedCSS;
-			const selectorList = cssRules.map((cssRule) => cssRule.selectorText);
-			selectors = [...new Set(selectorList)];
+			selectors = CSSReader.getCSSSelectors(this.parsedCSS);
 		}
 
 		return selectors;
+	}
+
+	/**
+	 * @property {CSSGroupingRule[]} atRules - the at-rules found in the CSS
+	 */
+	get atRules() {
+		let atRuleList = [];
+
+		if (this.parsedCSS) {
+			atRuleList = CSSReader.getAtRules(this.parsedCSS);
+		}
+
+		return atRuleList;
 	}
 }

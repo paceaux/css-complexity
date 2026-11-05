@@ -1,10 +1,34 @@
 import * as specificity from 'specificity';
 
+/*
+HEY: TODO
+A SELECTOR CAN HAVE A COMMA:
+.someThing, anotherThing {}
+
+THIS WILL SHIT ITS PANTS IF IT'S GIVEN THAT
+
+FIGURE OUT WHAT TO DO
+*/
 /**
  * @class
  * @classdesc Represents a CSS selector.
  */
 class Selector {
+	/**
+	 * @param  {string} selector
+	 * @returns {string} the sanitized selector (lowercased, extraneous spaces removed, trimmed)
+	 */
+	static sanitizeSelector(selector) {
+		if (typeof selector !== 'string') throw new Error('selector must be a string');
+
+		const sanitizedSelector = selector
+			.toLowerCase()
+			.replace(/\s{2,}/g, ' ') // remove double spaces or more
+			.trim();
+
+		return sanitizedSelector;
+	}
+
 	functionalPseudoSelectors = ['is', 'where', 'has', 'not'];
 
 	selectorCombinators = ['~', '>', '+'];
@@ -36,7 +60,7 @@ class Selector {
 		this.dependencies = dependencies;
 
 		if (selector) {
-			this.selector = selector.trim();
+			this.selector = Selector.sanitizeSelector(selector);
 		}
 	}
 
